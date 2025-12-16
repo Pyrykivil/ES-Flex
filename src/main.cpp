@@ -12,7 +12,8 @@ void setup() {
 
 void loop() {
   delay(5000);
-  moveStepperBackAndForth();
+  //moveStepperBackAndForthLerp();
+  moveXAxis(400);
   //moveInCircle(50.0, 800, 30); // 50mm radius, 200 steps/rev, 30 RPM
   
 }

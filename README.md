@@ -7,4 +7,5 @@ Restoring ES-Flex bloodsample sorter
 - **Stepper Driver:** DM556
 - **Controller:** Arduino Uno
 - **Power Supply:** 48V
+- **X-axis Pulley Circumference:** 30.6 mm
 

@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#include "math.h"
 // Define stepper motor connections
 const int DIR_PIN_1 = 9;
 const int PULSE_PIN_1 = 8;
@@ -10,13 +10,29 @@ const int PULSE_PIN_3 = 4;
 const int PULSE_DELAY_US = 500; // in microseconds
 
 // Function to generate a single pulse on two motors
-void pulseMotors() {
+void pulseMotors(long delay_us = PULSE_DELAY_US) {
     digitalWrite(PULSE_PIN_1, HIGH);
     digitalWrite(PULSE_PIN_2, HIGH);
-    delayMicroseconds(PULSE_DELAY_US);
+    delayMicroseconds(delay_us);
     digitalWrite(PULSE_PIN_1, LOW);
     digitalWrite(PULSE_PIN_2, LOW);
-    delayMicroseconds(PULSE_DELAY_US);
+    delayMicroseconds(delay_us);
+}
+
+// Function to generate a single pulse on one motor
+void pulseAxis(int pulse_pin, long delay_us) {
+    digitalWrite(pulse_pin, HIGH);
+    delayMicroseconds(delay_us);
+    digitalWrite(pulse_pin, LOW);
+    delayMicroseconds(delay_us);
+}
+
+inline long lerp(long a, long b, float t) {
+    return a + (long)((b - a) * t);
+}
+
+inline float easeOutPower(float t, float k) {
+    return 1.0f - powf(1.0f - t, k);
 }
 
 // Function to move motors with acceleration and deceleration ramping
@@ -76,18 +92,12 @@ void moveWithLerp(long total_pulses, int ramp_pulses, long min_delay, long max_d
     }
 }
 
-inline long lerp(long a, long b, float t) {
-    return a + (long)((b - a) * t);
-}
 
-inline float easeOutPower(float t, float k) {
-    return 1.0f - powf(1.0f - t, k);
-}
 
 // Move X and Y axes back and forth
 void moveStepperBackAndForth() {
   long num_pulses = 2500;
-  int ramp_pulses = 500;
+  int ramp_pulses = 50;
   int min_delay = 450;
   int max_delay = 2000;
 
@@ -106,8 +116,8 @@ void moveStepperBackAndForth() {
 
 void moveStepperBackAndForthLerp() {
     long total_pulses = 2500;
-    int  ramp_pulses  = 500;
-    long min_delay    = 450;
+    int  ramp_pulses  = 125;
+    long min_delay    = 400;
     long max_delay    = 2000;
 
     // Forward
@@ -154,4 +164,50 @@ void moveInCircle(float radius_mm, int steps_per_revolution, int speed_rpm) {
     delayMicroseconds(step_delay_us / 2);
   }
 }
+
+// Overload moveWithLerp to move a specific axis in mm, using pulley diameter
+void moveWithLerp(float distance_mm, float pulley_diameter, int steps_per_rev, int pulse_pin, int dir_pin, int ramp_pulses, long min_delay, long max_delay) {
+    float pulley_circumference = pulley_diameter * PI;
+    long total_pulses = (long)((abs(distance_mm) / pulley_circumference) * steps_per_rev);
+    float k = 3.5;
+
+    // Set direction
+    digitalWrite(dir_pin, distance_mm > 0 ? HIGH : LOW);
+
+    // -------- Acceleration --------
+    // Handle short moves where total_pulses < 2 * ramp_pulses
+    long accel_pulses = ramp_pulses;
+    if (total_pulses < 2 * ramp_pulses) {
+        accel_pulses = total_pulses / 2;
+    }
+
+    for (int i = 0; i < accel_pulses; i++) {
+        float t = (float)i / (float)(accel_pulses - 1);
+        t = easeOutPower(t, k);
+        long delay_us = lerp(max_delay, min_delay, t);
+        pulseAxis(pulse_pin, delay_us);
+    }
+
+    // -------- Constant speed --------
+    long cruise_pulses = total_pulses - 2 * accel_pulses;
+    for (long i = 0; i < cruise_pulses; i++) {
+        pulseAxis(pulse_pin, min_delay);
+    }
+
+    // -------- Deceleration --------
+    for (int i = 0; i < accel_pulses; i++) {
+        float t = (float)i / (float)(accel_pulses - 1);
+        t = easeOutPower(t, k);
+        long delay_us = lerp(min_delay, max_delay, t);
+        pulseAxis(pulse_pin, delay_us);
+    }
+}
+
+void moveXAxis(float distance_mm) {
+    // X-axis: Pins 8 (Pulse) and 9 (Dir) -> PULSE_PIN_1, DIR_PIN_1
+    // Pulley diameter: 9.74 mm (example, adjust as needed)
+    // Assuming 400 steps/rev (standard)
+    moveWithLerp(distance_mm, 32, 400, PULSE_PIN_1, DIR_PIN_1, 125, 1000, 2000);
+}
+
 
