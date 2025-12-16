@@ -67,7 +67,7 @@ void moveWithRamping(long total_pulses, int ramp_pulses, int min_delay, int max_
 
 void moveWithLerp(long total_pulses, int ramp_pulses, long min_delay, long max_delay) {
 
-    float k = 2.5; // controls lerp acceleration and deceleration speed. 1 = linear, 2 = quadratic, 3 = cubic and etc
+    float k = 3; // controls lerp acceleration and deceleration speed. 1 = linear, 2 = quadratic, 3 = cubic and etc
 
     // -------- Acceleration --------
     for (int i = 0; i < ramp_pulses; i++) {
@@ -116,8 +116,8 @@ void moveStepperBackAndForth() {
 
 void moveStepperBackAndForthLerp() {
     long total_pulses = 2500;
-    int  ramp_pulses  = 125;
-    long min_delay    = 400;
+    int  ramp_pulses  = 100;
+    long min_delay    = 500;
     long max_delay    = 2000;
 
     // Forward
