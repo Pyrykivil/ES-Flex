@@ -96,6 +96,25 @@ void moveStepperBackAndForth() {
   delay(400);
 }
 
+void moveStepperBackAndForthLerp() {
+    long total_pulses = 2500;
+    int  ramp_pulses  = 500;
+    long min_delay    = 450;
+    long max_delay    = 2000;
+
+    // Forward
+    digitalWrite(DIR_PIN_1, HIGH);
+    digitalWrite(DIR_PIN_2, HIGH);
+    moveWithLerp(total_pulses, ramp_pulses, min_delay, max_delay);
+    delay(200);
+
+    // Backward
+    digitalWrite(DIR_PIN_1, LOW);
+    digitalWrite(DIR_PIN_2, LOW);
+    moveWithLerp(total_pulses, ramp_pulses, min_delay, max_delay);
+    delay(500);
+}
+
 // Moves the head in a circle on the XY plane
 void moveInCircle(float radius_mm, int steps_per_revolution, int speed_rpm) {
   float angle_step = (2 * PI) / steps_per_revolution;
