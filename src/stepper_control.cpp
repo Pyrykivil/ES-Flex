@@ -51,9 +51,12 @@ void moveWithRamping(long total_pulses, int ramp_pulses, int min_delay, int max_
 
 void moveWithLerp(long total_pulses, int ramp_pulses, long min_delay, long max_delay) {
 
+    float k = 2.5; // controls lerp acceleration and deceleration speed. 1 = linear, 2 = quadratic, 3 = cubic and etc
+
     // -------- Acceleration --------
     for (int i = 0; i < ramp_pulses; i++) {
         float t = (float)i / (float)(ramp_pulses - 1);   // 0 → 1
+        t = easeOutPower(t, k);
         long delay_us = lerp(max_delay, min_delay, t);
         pulseMotors(delay_us);
     }
@@ -67,6 +70,7 @@ void moveWithLerp(long total_pulses, int ramp_pulses, long min_delay, long max_d
     // -------- Deceleration --------
     for (int i = 0; i < ramp_pulses; i++) {
         float t = (float)i / (float)(ramp_pulses - 1);   // 0 → 1
+        t = easeOutPower(t, k);
         long delay_us = lerp(min_delay, max_delay, t);
         pulseMotors(delay_us);
     }
@@ -74,6 +78,10 @@ void moveWithLerp(long total_pulses, int ramp_pulses, long min_delay, long max_d
 
 inline long lerp(long a, long b, float t) {
     return a + (long)((b - a) * t);
+}
+
+inline float easeOutPower(float t, float k) {
+    return 1.0f - powf(1.0f - t, k);
 }
 
 // Move X and Y axes back and forth
