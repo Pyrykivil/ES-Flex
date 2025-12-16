@@ -49,6 +49,33 @@ void moveWithRamping(long total_pulses, int ramp_pulses, int min_delay, int max_
     }
 }
 
+void moveWithLerp(long total_pulses, int ramp_pulses, long min_delay, long max_delay) {
+
+    // -------- Acceleration --------
+    for (int i = 0; i < ramp_pulses; i++) {
+        float t = (float)i / (float)(ramp_pulses - 1);   // 0 → 1
+        long delay_us = lerp(max_delay, min_delay, t);
+        pulseMotors(delay_us);
+    }
+
+    // -------- Constant speed --------
+    long cruise_pulses = total_pulses - 2L * ramp_pulses;
+    for (long i = 0; i < cruise_pulses; i++) {
+        pulseMotors(min_delay);
+    }
+
+    // -------- Deceleration --------
+    for (int i = 0; i < ramp_pulses; i++) {
+        float t = (float)i / (float)(ramp_pulses - 1);   // 0 → 1
+        long delay_us = lerp(min_delay, max_delay, t);
+        pulseMotors(delay_us);
+    }
+}
+
+inline long lerp(long a, long b, float t) {
+    return a + (long)((b - a) * t);
+}
+
 // Move X and Y axes back and forth
 void moveStepperBackAndForth() {
   long num_pulses = 2500;
